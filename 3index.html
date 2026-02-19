@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Experiment</title>
+    <style>
+        /* Basic neutral reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            /* Prevent body scroll, handle in main */
+        }
+
+        /* Sidebar Styles - Fixed Narrow */
+        .sidebar {
+            width: 60px;
+            background-color: #333;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+            flex-shrink: 0;
+            z-index: 20;
+            /* Above drawer */
+        }
+
+        .sidebar-icon {
+            width: 40px;
+            height: 40px;
+            background-color: #555;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .sidebar-icon:hover {
+            background-color: #666;
+        }
+
+        .sidebar-icon.active {
+            background-color: #4a90e2;
+            /* Active state color */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Drawer Styles */
+        .drawer {
+            width: 300px;
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+            margin-left: -300px;
+            /* Hidden by default */
+            z-index: 10;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .drawer.open {
+            margin-left: 0;
+        }
+
+        .drawer-header {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            color: #444;
+            background-color: #fafafa;
+        }
+
+        .drawer-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        /* Drawer Accordion / Sections */
+        .drawer-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .drawer-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #eee;
+            text-transform: uppercase;
+        }
+
+        .vocab-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .vocab-item {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            /* Capsule/Tag style */
+            font-size: 0.85rem;
+            cursor: move;
+            /* Drag cursor */
+            transition: all 0.2s;
+            user-select: none;
+            display: inline-block;
+        }
+
+        .vocab-item:hover {
+            border-color: #4a90e2;
+            color: #4a90e2;
+            transform: translateY(-1px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .vocab-item:active {
+            cursor: grabbing;
+        }
+
+        /* Main Content Container - Compact for One Page */
+        #app {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            /* Reduced padding */
+            gap: 1rem;
+            /* Reduced gap between cards */
+            height: 100vh;
+            overflow: hidden;
+            /* Prevent body scroll if possible, content inside cards might scroll */
+            box-sizing: border-box;
+        }
+
+        /* Card Styles */
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1.25rem;
+            /* Slightly reduced padding */
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+
+        /* --- TOP CARD: AI Result --- */
+        .top-card {
+            flex: 0 0 55vh;
+            /* Fixed height ratio ~55% of viewport */
+            min-height: 0;
+            /* Allow shrinking if needed */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Card Header - Simple (Just Title) */
+        .top-card-header {
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+
+        .top-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #444;
+            margin: 0;
+        }
+
+        .result-container {
+            flex: 1;
+            display: flex !important;
+            /* Force flex */
+            align-items: center !important;
+            /* Vertical Center */
+            justify-content: center !important;
+            /* Horizontal Center */
+            background-color: #fafafa;
+            border-radius: 4px;
+            margin-top: 0;
+            /* Reset */
+            overflow: hidden;
+            position: relative;
+        }
+
+        .placeholder-text {
+            font-size: 0.9rem;
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            margin: 0;
+        }
+
+        /* --- BOTTOM CARD: Design Concept --- */
+        .bottom-card {
+            flex: 1;
+            /* Take remaining space */
+            min-height: 0;
+            /* Allow flex shrink */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Unified Concept Header for Bottom Card */
+        .concept-header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .concept-title {
+            font-size: 1.1rem;
+            /* H3 size */
+            font-weight: 600;
+            color: #444;
+            margin: 0 0 0.5rem 0;
+            /* Exact Margin Request */
+        }
+
+        .concept-divider {
+            width: 100%;
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 0.5rem 0 1rem 0;
+            /* Exact Margin Request */
+        }
+
+        .concept-hint {
+            font-size: 0.9rem;
+            color: #999;
+            font-style: italic;
+            line-height: 1.5;
+            text-align: left;
+            margin: 0 0 1.25rem 0;
+            /* Exact Margin Request */
+        }
+
+        /* Input Areas */
+        .input-area {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        /* Natural Mode Input */
+        /* .input-area {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+        } */
+
+        .text-input {
+            flex: 1;
+            height: 56px;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            resize: none;
+            font-family: inherit;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        #btn-generate {
+            height: 56px;
+            padding: 0 1.5rem;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        #btn-generate:hover {
+            background-color: #555;
+        }
+
+        /* Result Card Styles - REFINED */
+        /* .result-container {
+            flex: 1;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 0.9rem;
+        } */
+
+        /* .placeholder-text {
+            font-style: italic;
+        } */
+
+        /* FBS Mode Styles in Main Card */
+        .fbs-container {
+            display: flex;
+            flex-direction: column;
+            /* Back to column because instruction is top-level */
+            gap: 0;
+            /* Gap handled by internal elements */
+            width: 100%;
+            animation: fadeIn 0.3s ease;
+            padding-top: 0;
+            /* Remove any top padding as spacing is handled by hint-text margin */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* SENTENCE BUILDER / INLINE SLOTS */
+        .sentence-builder {
+            flex: 1;
+            /* Take remaining space */
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            /* Reduced gap */
+            padding: 0.5rem;
+            /* Reduced padding */
+            font-size: 1rem;
+            /* Slightly smaller font if needed */
+            color: #333;
+            line-height: 1.8;
+            background: #fff;
+            border: 1px solid #ddd;
+            /* Match input border */
+            border-radius: 4px;
+        }
+
+        .sentence-line {
+            display: flex;
+            align-items: center;
+            /* Center vertical */
+            flex-wrap: wrap;
+            /* Allow wrapping */
+            gap: 0.4rem;
+        }
+
+        .sentence-text {
+            white-space: nowrap;
+        }
+
+        .slot-zone {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.25rem;
+            min-width: 100px;
+            /* Slightly smaller min-width */
+            min-height: 36px;
+            /* Reduced min-height */
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            padding: 0.2rem 0.4rem;
+            background-color: #fff;
+            transition: all 0.2s;
+            position: relative;
+            vertical-align: middle;
+        }
+
+        .slot-zone:empty::before {
+            content: attr(data-placeholder);
+            color: #ccc;
+            font-size: 0.85rem;
+            pointer-events: none;
+            position: absolute;
+            /* Center placeholder */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+
+        .slot-zone.drag-over {
+            background-color: #f5f5f5;
+            border-color: #999;
+        }
+
+        /* Slot Error Shake Animation */
+        .slot-error {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+            border-color: #e74c3c;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
+        }
+
+        .slot-tag {
+            background: #eef;
+            border: 1px solid #ccd;
+            color: #335;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+            animation: popIn 0.2s;
+        }
+
+        /* Punctuation comma between tags handled via JS or CSS logic?
+           Requirement: [Tag1]、[Tag2]
+           We can append a span or pseudo-element after each tag EXCEPT the last one.
+           Or handle inserting text nodes in JS.
+           Let's use a ::after on .slot-tag:not(:last-child) approach if possible, but the requirement implies the comma is outside the tag.
+           Actually the requirement says: "[詞1]、[詞2]"
+           So visually: [Box] 、 [Box]
+           Let's implement this by appending text nodes or spans for commas in JS.
+        */
+        .slot-comma {
+            color: #666;
+            margin-right: 0.25rem;
+            user-select: none;
+        }
+
+        .remove-tag-btn {
+            cursor: pointer;
+            color: #999;
+            font-weight: bold;
+            font-size: 0.9rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            transition: color 0.2s;
+        }
+
+        .remove-tag-btn:hover {
+            color: #d00;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Generate Button for FBS (Reusing Natural Mode Style) */
+        /* Since structure is flex-row, we can just reuse #btn-generate styles or apply same class */
+        .btn-generate-fbs {
+            height: 56px;
+            /* Match Natural Mode Button Height */
+            padding: 0 1.5rem;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            /* Flex for centering content */
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            /* Prevent shrinking */
+        }
+
+        .btn-generate-fbs:hover {
+            background-color: #555;
+        }
+
+        .btn-generate-fbs:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Layout specific adjustments based on requirements */
+        /* .top-card {
+            flex: 1.5;
+            Larger area for image result
+        } */
+
+        /* .bottom-card {
+            flex: 1;
+            Input area
+            Removed min-height to adapt to content
+        } */
+
+        /* Hidden/Utility Sections */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Log Area - Minimalist/Bottom */
+        .log-area {
+            margin-top: auto;
+            font-size: 0.75rem;
+            opacity: 0.6;
+            padding: 0.5rem 1.5rem;
+            /* Add padding consistent with main layout */
+        }
+
+        .log-area summary {
+            cursor: pointer;
+        }
+
+        /* Shared Instruction / Hint Text */
+        /* .hint-text {
+            font-size: 0.9rem;
+            color: #999;
+            Updated to lighter gray as requested
+            font-style: italic;
+            Italic per request
+            line-height: 1.5;
+            Slightly increased line-height for better readability
+            text-align: left;
+            Explicitly left aligned
+            margin: 1rem 0 1.5rem 0;
+            Request: 1rem 0 1.5rem 0
+        } */
+
+        /* Instruction Wrapper for spacing */
+        /* .instruction-wrapper {
+            margin-top: 0.75rem;
+            Balanced top margin
+            margin-bottom: 0.75rem;
+            Balanced bottom margin for visual centering
+            display: flex;
+            align-items: center;
+        } */
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-icon" id="mode-toggle" title="切換模式">≡</div>
+    </aside>
+
+    <!-- Drawer (Dictionary) -->
+    <div class="drawer" id="vocab-drawer">
+        <div class="drawer-header">語意資料庫</div>
+        <div class="drawer-content">
+
+            <div class="drawer-section">
+                <div class="drawer-section-title">功能</div>
+                <div class="vocab-list" id="drawer-vocab-f"></div>
+            </div>
+
+            <div class="drawer-section">
+                <div class="drawer-section-title">行為</div>
+                <div class="vocab-list" id="drawer-vocab-b"></div>
+            </div>
+
+            <div class="drawer-section">
+                <div class="drawer-section-title">結構</div>
+                <div class="vocab-list" id="drawer-vocab-s"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div id="app">
+
+        <!-- Top Card: AI Result -->
+        <section class="card top-card">
+            <div class="top-card-header">
+                <h2 class="top-card-title">AI 生成結果</h2>
+            </div>
+            <div id="image-display-area" class="result-container">
+                <p class="placeholder-text">請在下方輸入您的設計想法</p>
+            </div>
+        </section>
+
+        <!-- Bottom Card: Design Concept -->
+        <section class="card bottom-card">
+
+            <!-- Unified Header for Bottom Card -->
+            <div class="concept-header">
+                <h3 class="concept-title" id="input-card-title">設計概念（自然語言模式）</h3>
+                <hr class="concept-divider">
+                <p class="concept-hint" id="input-card-instruction">請用您自己的話描述水壺設計</p>
+            </div>
+
+            <!-- NATURAL LANGUAGE MODE (Default) -->
+            <div id="mode-natural">
+                <div class="input-area" id="block-natural">
+                    <textarea class="text-input" placeholder="請輸入您的設計想法..."></textarea>
+                    <button id="btn-generate" title="傳送">➤</button>
+                </div>
+            </div>
+
+            <!-- STRUCTURED FBS MODE (Initially Hidden) -->
+            <div id="mode-fbs" class="fbs-container hidden">
+
+                <div class="fbs-input-row" style="display: flex; gap: 12px; width: 100%; align-items: flex-end;">
+                    <!-- Inline Sentence Builder -->
+                    <div class="sentence-builder">
+                        <div class="sentence-line">
+                            <span class="sentence-text">請生成一款</span>
+                            <div class="slot-zone" id="slot-f" data-type="f" data-placeholder="功能"></div>
+                            <span class="sentence-text">的運動水壺，</span>
+                        </div>
+
+                        <div class="sentence-line">
+                            <span class="sentence-text">使用者可透過</span>
+                            <div class="slot-zone" id="slot-b" data-type="b" data-placeholder="行為"></div>
+                            <span class="sentence-text">進行操作，</span>
+                        </div>
+
+                        <div class="sentence-line">
+                            <span class="sentence-text">其結構包含</span>
+                            <div class="slot-zone" id="slot-s" data-type="s" data-placeholder="結構"></div>
+                            <span class="sentence-text">。</span>
+                        </div>
+                    </div>
+
+                    <!-- Action (Same style as NL button) -->
+                    <button id="btn-generate-fbs" class="btn-generate-fbs" title="生成設計">➤</button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Hidden Logic Containers -->
+        <div class="hidden">
+            <div id="block-fbs-logic-placeholder"></div>
+        </div>
+
+        <!-- Minimal Log Area -->
+        <section id="log-display-area" class="log-area" style="display:none;">
+            <details>
+                <summary>Logs</summary>
+                <div id="log-content">[System Ready]</div>
+            </details>
+        </section>
+
+    </div>
+
+    <script>
+        console.log('Experiment Interface Re-Layout (Inline Slots) Initialized');
+
+        // --- DATA & STATE ---
+        const vocabularies = {
+            f: ['保溫', '大容量', '方便單手開啟'],
+            b: ['旋轉開啟瓶蓋', '按壓開蓋', '就口飲用'],
+            s: ['圓柱狀瓶身', '透明瓶身', '上方提把', '矽膠止滑底部']
+        };
+
+        const state = {
+            mode: 'natural', // 'natural' or 'fbs'
+            selected: {
+                f: [],
+                b: [],
+                s: []
+            }
+        };
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            inputCardTitle: document.getElementById('input-card-title'),
+            inputCardInstruction: document.getElementById('input-card-instruction'), // New ID
+            // Instruction elements now managed by container visibility
+
+            modeNatural: document.getElementById('mode-natural'),
+            modeFbs: document.getElementById('mode-fbs'),
+
+            sidebarToggle: document.getElementById('mode-toggle'),
+            drawer: document.getElementById('vocab-drawer'),
+
+            vocabDrawerF: document.getElementById('drawer-vocab-f'),
+            vocabDrawerB: document.getElementById('drawer-vocab-b'),
+            vocabDrawerS: document.getElementById('drawer-vocab-s'),
+
+            // Slots
+            slotF: document.getElementById('slot-f'),
+            slotB: document.getElementById('slot-b'),
+            slotS: document.getElementById('slot-s'),
+
+            btnGenerateFbs: document.getElementById('btn-generate-fbs'),
+            btnGenerateNatural: document.getElementById('btn-generate'),
+            textInputNatural: document.querySelector('.text-input')
+        };
+
+        // --- INITIALIZATION ---
+        initDrawerVocab();
+        setupDragAndDrop();
+
+        // --- EVENT LISTENERS ---
+
+        // Mode Toggle (Linked to Drawer)
+        els.sidebarToggle.addEventListener('click', toggleDrawerMode);
+
+        // FBS Generate
+        els.btnGenerateFbs.addEventListener('click', handleFbsGenerate);
+
+        // Natural Generate
+        els.btnGenerateNatural.addEventListener('click', () => {
+            const input = els.textInputNatural.value;
+            log(`[Natural] Generated request: "${input}"`);
+        });
+
+        // --- FUNCTIONS ---
+
+        function toggleDrawerMode() {
+            const isOpening = !els.drawer.classList.contains('open');
+
+            if (isOpening) {
+                // Open Drawer -> Switch to FBS
+                els.drawer.classList.add('open');
+                els.sidebarToggle.classList.add('active');
+                state.mode = 'fbs';
+
+                els.modeNatural.classList.add('hidden');
+                els.modeFbs.classList.remove('hidden');
+                els.inputCardTitle.textContent = '設計概念（結構化模式）';
+                els.inputCardInstruction.textContent = '請拖曳左側詞彙完成設計概念組合';
+
+            } else {
+                // Close Drawer -> Switch to Natural
+                els.drawer.classList.remove('open');
+                els.sidebarToggle.classList.remove('active');
+                state.mode = 'natural';
+
+                els.modeFbs.classList.add('hidden');
+                els.modeNatural.classList.remove('hidden');
+                els.inputCardTitle.textContent = '設計概念（自然語言模式）';
+                els.inputCardInstruction.textContent = '請用您自己的話描述水壺設計';
+            }
+        }
+
+        function initDrawerVocab() {
+            renderVocabList('f', els.vocabDrawerF);
+            renderVocabList('b', els.vocabDrawerB);
+            renderVocabList('s', els.vocabDrawerS);
+        }
+
+        function renderVocabList(type, container) {
+            vocabularies[type].forEach(word => {
+                const el = document.createElement('div');
+                el.className = 'vocab-item';
+                el.textContent = word;
+                el.draggable = true;
+                el.dataset.type = type;
+                el.dataset.word = word;
+
+                // Drag Start
+                el.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        type,
+                        word
+                    }));
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+
+                // Double click interaction (Optional backup)
+                el.addEventListener('dblclick', () => {
+                    if (state.mode === 'fbs') {
+                        addTagToSlot_Logic(type, word);
+                    }
+                });
+
+                container.appendChild(el);
+            });
+        }
+
+        function setupDragAndDrop() {
+            const slots = [els.slotF, els.slotB, els.slotS];
+
+            slots.forEach(slot => {
+                slot.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    slot.classList.add('drag-over');
+                    e.dataTransfer.dropEffect = 'copy';
+                });
+
+                slot.addEventListener('dragleave', () => {
+                    slot.classList.remove('drag-over');
+                });
+
+                slot.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    slot.classList.remove('drag-over');
+
+                    try {
+                        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+
+                        // Validation: Type Match
+                        if (data.type === slot.dataset.type) {
+                            addTagToSlot_Logic(data.type, data.word);
+                        } else {
+                            // Slot Mismatch Feedback
+                            triggerSlotError(slot);
+                        }
+                    } catch (err) {
+                        console.error('Invalid drop data', err);
+                    }
+                });
+            });
+        }
+
+        function triggerSlotError(slot) {
+            slot.classList.add('slot-error');
+            setTimeout(() => {
+                slot.classList.remove('slot-error');
+            }, 400);
+        }
+
+        function addTagToSlot_Logic(type, word) {
+            // Prevent duplicates
+            if (!state.selected[type].includes(word)) {
+                state.selected[type].push(word);
+                updateSlotDisplay(type);
+            }
+        }
+
+        function removeTagFromSlot_Logic(type, word) {
+            state.selected[type] = state.selected[type].filter(w => w !== word);
+            updateSlotDisplay(type);
+        }
+
+        function updateSlotDisplay(type) {
+            const slot = els[`slot${type.toUpperCase()}`];
+            slot.innerHTML = ''; // Clear current content
+
+            const words = state.selected[type];
+
+            words.forEach((word, index) => {
+                // Add tag
+                const tag = document.createElement('div');
+                tag.className = 'slot-tag';
+                tag.innerHTML = `
+                    ${word}
+                    <span class="remove-tag-btn">&times;</span>
+                `;
+
+                // Remove logic
+                tag.querySelector('.remove-tag-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    removeTagFromSlot_Logic(type, word);
+                };
+
+                slot.appendChild(tag);
+
+                // Add comma if not the last item
+                if (index < words.length - 1) {
+                    const comma = document.createElement('span');
+                    comma.className = 'slot-comma';
+                    comma.textContent = '、';
+                    slot.appendChild(comma);
+                }
+            });
+        }
+
+        function handleFbsGenerate() {
+            // Validate
+            // Check if any slot is empty
+            const incomplete = [];
+            if (state.selected.f.length === 0) incomplete.push('功能 (Function)');
+            if (state.selected.b.length === 0) incomplete.push('行為 (Behavior)');
+            if (state.selected.s.length === 0) incomplete.push('結構 (Structure)');
+
+            if (incomplete.length > 0) {
+                alert(`請完成 ${incomplete.length === 3 ? '功能、行為、結構' : incomplete.map(s => s.split(' ')[0]).join('、')} 詞彙選擇`);
+                return;
+            }
+
+            // Construct Final Prompt using serial comma visualization logic from slots
+            const parts = {
+                f: state.selected.f.map(w => `[${w}]`).join('、'),
+                b: state.selected.b.map(w => `[${w}]`).join('、'),
+                s: state.selected.s.map(w => `[${w}]`).join('、')
+            };
+
+            const finalPrompt = `請生成一款 ${parts.f} 的運動水壺，
+使用者可透過 ${parts.b} 進行操作，
+其結構包含 ${parts.s} 。`;
+
+            log(`[FBS] Generated Prompt:\n${finalPrompt}`);
+            console.log(finalPrompt);
+        }
+
+        function log(msg) {
+            const logContent = document.getElementById('log-content');
+            const timestamp = new Date().toLocaleTimeString();
+            logContent.innerHTML += `<div style="margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">[${timestamp}] ${msg.replace(/\n/g, '<br>')}</div>`;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
