@@ -94,19 +94,113 @@
             padding: 1rem;
         }
 
-        /* Drawer Accordion / Sections */
-        .drawer-section {
-            margin-bottom: 1.5rem;
+        /* Custom Accordion Styles */
+        .acc-group {
+            display: flex;
+            flex-direction: column;
         }
 
-        .drawer-section-title {
-            font-size: 0.9rem;
+        .acc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .acc-title {
             font-weight: 600;
+        }
+
+        .acc-chevron {
+            /* Common for both text (Level 2) and SVG (Level 1) if mixed, 
+               but refined for SVG priority */
+            transition: transform 0.2s ease;
+            color: currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Level 1 uses SVG */
+        .level-1-header .acc-chevron {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+
+        /* Rotate chevron when open */
+        .acc-header.is-open .acc-chevron {
+            transform: rotate(180deg);
+        }
+
+        .acc-content {
+            overflow: hidden;
+            display: none;
+            /* Hidden by default */
+        }
+
+        .acc-content.is-open {
+            display: block;
+        }
+
+        /* Level 1 Specifics */
+        .level-1-group {
+            margin-bottom: 0.5rem;
+        }
+
+        .level-1-header {
+            font-size: 0.95rem;
+            color: #444;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid #eee;
+            /* Divider requsted */
+        }
+
+        .level-1-header:hover {
+            background-color: #fafafa;
+        }
+
+        /* Level 2 Specifics */
+        .level-2-container {
+            /* Container for all Level 2 items inside Level 1 content */
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .level-2-group {
+            margin-bottom: 0.25rem;
+        }
+
+        .level-2-header {
+            font-size: 0.9rem;
             color: #666;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 2px solid #eee;
-            text-transform: uppercase;
+            padding: 0.4rem 0.5rem 0.4rem 1rem;
+            /* Indent */
+            border-radius: 4px;
+        }
+
+        .level-2-header:hover {
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .level-2-header .acc-chevron {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2;
+        }
+
+        /* Level 3 (Tags) */
+        /* Flex container for tags, nested inside acc-content */
+        .level-3-container {
+            padding: 0.5rem 0 1rem 1.5rem;
+            /* Indent tags relative to L2 */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .vocab-list {
@@ -229,9 +323,20 @@
         /* Unified Concept Header for Bottom Card */
         .concept-header {
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            flex-direction: row;
+            /* Changed to row for inline hint */
+            align-items: baseline;
+            /* Align text baseline */
+            justify-content: flex-start;
             width: 100%;
+            margin-bottom: 1rem;
+            /* Spacing below header */
+            flex-wrap: wrap;
+            /* Allow wrapping on small screens */
+            gap: 1rem;
+            /* Added border bottom to match Top Card */
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
         }
 
         .concept-title {
@@ -239,26 +344,19 @@
             /* H3 size */
             font-weight: 600;
             color: #444;
-            margin: 0 0 0.5rem 0;
-            /* Exact Margin Request */
+            margin: 0;
+            white-space: nowrap;
         }
 
-        .concept-divider {
-            width: 100%;
-            border: 0;
-            border-top: 1px solid #eee;
-            margin: 0.5rem 0 1rem 0;
-            /* Exact Margin Request */
-        }
+        /* Removed divider based on new layout request */
+        /* .concept-divider { ... } */
 
         .concept-hint {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #999;
             font-style: italic;
-            line-height: 1.5;
-            text-align: left;
-            margin: 0 0 1.25rem 0;
-            /* Exact Margin Request */
+            /* Use italic as requested */
+            margin: 0;
         }
 
         /* Input Areas */
@@ -393,15 +491,21 @@
             gap: 0.25rem;
             min-width: 100px;
             /* Slightly smaller min-width */
-            min-height: 36px;
-            /* Reduced min-height */
+            height: 48px;
+            /* Fixed larger height to avoid jump */
+            /* Removed height: fixed, using min-height large enough or explicit height if strict about no-jump */
+            /* Using min-height: 48px seems reasonable, let's try height: 48px if content fits, or min-height */
+            /* User requested "Fixed height (avoid jump)" -> min-height coupled with generous spacing */
+
             border: 2px dashed #ccc;
-            border-radius: 6px;
-            padding: 0.2rem 0.4rem;
+            border-radius: 20px;
+            /* Larger radius matching chips (20px) */
+            padding: 0.2rem 0.5rem;
             background-color: #fff;
             transition: all 0.2s;
             position: relative;
             vertical-align: middle;
+            box-sizing: border-box;
         }
 
         .slot-zone:empty::before {
@@ -452,53 +556,79 @@
             }
         }
 
-        .slot-tag {
-            background: #eef;
-            border: 1px solid #ccd;
-            color: #335;
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
+        /* Shared Term Chip (Left & Right) */
+        .term-chip {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            /* Capsule/Tag style */
             font-size: 0.85rem;
+            cursor: move;
+            /* Drag cursor */
+            transition: all 0.2s;
+            user-select: none;
             display: inline-flex;
             align-items: center;
             gap: 0.3rem;
             white-space: nowrap;
-            animation: popIn 0.2s;
         }
 
-        /* Punctuation comma between tags handled via JS or CSS logic?
-           Requirement: [Tag1]、[Tag2]
-           We can append a span or pseudo-element after each tag EXCEPT the last one.
-           Or handle inserting text nodes in JS.
-           Let's use a ::after on .slot-tag:not(:last-child) approach if possible, but the requirement implies the comma is outside the tag.
-           Actually the requirement says: "[詞1]、[詞2]"
-           So visually: [Box] 、 [Box]
-           Let's implement this by appending text nodes or spans for commas in JS.
+        /* Shared Hover & Selected Style */
+        .term-chip:hover,
+        .term-chip.selected {
+            border-color: #4a90e2;
+            color: #4a90e2;
+            transform: translateY(-1px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            background-color: #fff;
+            /* Keep white bg unless specified otherwise */
+        }
+
+        .term-chip:active {
+            cursor: grabbing;
+        }
+
+        /* Additional override if selected needs background */
+        /* .term-chip.selected {
+            background-color: #eef; 
+            font-weight: 500;
+        } */
+        /* User requested identical to hover, so we remove extra selected bg for now or keep it minimal if they want just the "light" effect */
+
+        /* Let's follow the user request: "Same visual as hover" 
+           Current hover: border-color: #4a90e2, color: #4a90e2, translateY, shadow.
+           We'll apply this to .selected too.
         */
-        .slot-comma {
-            color: #666;
-            margin-right: 0.25rem;
-            user-select: none;
-        }
 
-        .remove-tag-btn {
+
+        /* Remove Button (Right Side Only) */
+        .term-chip .remove-btn {
             cursor: pointer;
             color: #999;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 1rem;
             line-height: 1;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            transition: color 0.2s;
+            margin-left: 2px;
+            transition: all 0.2s;
         }
 
-        .remove-tag-btn:hover {
+        .term-chip .remove-btn:hover {
             color: #d00;
             background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Slot Zone styling overrides */
+        .slot-zone .term-chip {
+            margin: 0.1rem;
+            /* Spacing inside slot */
+            animation: popIn 0.2s;
         }
 
         @keyframes popIn {
@@ -611,20 +741,7 @@
         <div class="drawer-header">語意資料庫</div>
         <div class="drawer-content">
 
-            <div class="drawer-section">
-                <div class="drawer-section-title">功能</div>
-                <div class="vocab-list" id="drawer-vocab-f"></div>
-            </div>
-
-            <div class="drawer-section">
-                <div class="drawer-section-title">行為</div>
-                <div class="vocab-list" id="drawer-vocab-b"></div>
-            </div>
-
-            <div class="drawer-section">
-                <div class="drawer-section-title">結構</div>
-                <div class="vocab-list" id="drawer-vocab-s"></div>
-            </div>
+            <!-- Dynamic content will be injected here by initDrawerVocab() -->
 
         </div>
     </div>
@@ -648,8 +765,7 @@
             <!-- Unified Header for Bottom Card -->
             <div class="concept-header">
                 <h3 class="concept-title" id="input-card-title">設計概念（自然語言模式）</h3>
-                <hr class="concept-divider">
-                <p class="concept-hint" id="input-card-instruction">請用您自己的話描述水壺設計</p>
+                <span class="concept-hint" id="input-card-instruction">請用您自己的話描述水壺設計</span>
             </div>
 
             <!-- NATURAL LANGUAGE MODE (Default) -->
@@ -711,16 +827,180 @@
         console.log('Experiment Interface Re-Layout (Inline Slots) Initialized');
 
         // --- DATA & STATE ---
-        const vocabularies = {
-            f: ['保溫', '大容量', '方便單手開啟'],
-            b: ['旋轉開啟瓶蓋', '按壓開蓋', '就口飲用'],
-            s: ['圓柱狀瓶身', '透明瓶身', '上方提把', '矽膠止滑底部']
-        };
+        const SEMANTIC_DB = [
+            {
+                id: "F",
+                label: "功能",
+                children: [
+                    {
+                        id: "F-usability",
+                        label: "使用性",
+                        children: [
+                            { id: "F-usability-use", label: "方便使用", type: "term" },
+                            { id: "F-usability-open", label: "方便開啟", type: "term" },
+                            { id: "F-usability-drink", label: "方便飲用", type: "term" },
+                            { id: "F-usability-fill", label: "方便注水", type: "term" },
+                            { id: "F-usability-clean", label: "容易清洗", type: "term" },
+                            { id: "F-usability-view", label: "方便觀察水量", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "F-portability",
+                        label: "攜帶性",
+                        children: [
+                            { id: "F-portability-carry", label: "方便攜帶", type: "term" },
+                            { id: "F-portability-grip", label: "方便抓握", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "F-safety",
+                        label: "安全性",
+                        children: [
+                            { id: "F-safety-anti-slip", label: "止滑", type: "term" },
+                            { id: "F-safety-durable", label: "防摔耐用", type: "term" },
+                            { id: "F-safety-leakproof", label: "防漏", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "F-purpose",
+                        label: "用途性",
+                        children: [
+                            { id: "F-purpose-shake", label: "搖搖杯", type: "term" },
+                            { id: "F-purpose-thermal", label: "保溫", type: "term" }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "B",
+                label: "行為",
+                children: [
+                    {
+                        id: "B-open",
+                        label: "開蓋方式",
+                        children: [
+                            { id: "B-open-rotate-cap", label: "旋轉開啟瓶蓋", type: "term" },
+                            { id: "B-open-rotate-mouth", label: "旋轉開啟瓶口", type: "term" },
+                            { id: "B-open-finger-lift", label: "手指掀開蓋子", type: "term" },
+                            { id: "B-open-button", label: "一鍵按壓按鈕開蓋", type: "term" },
+                            { id: "B-open-push-slide", label: "下壓後掀開蓋", type: "term" },
+                            { id: "B-open-two-hand", label: "雙手開蓋", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "B-drink",
+                        label: "飲用方式",
+                        children: [
+                            { id: "B-drink-direct", label: "就口飲用", type: "term" },
+                            { id: "B-drink-straw", label: "吸允方式飲用", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "B-carry",
+                        label: "攜帶方式",
+                        children: [
+                            { id: "B-carry-hand", label: "手提攜帶", type: "term" },
+                            { id: "B-carry-finger", label: "單手指攜帶", type: "term" },
+                            { id: "B-carry-wrist", label: "掛在手腕上攜帶", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "B-observe",
+                        label: "狀態觀察",
+                        children: [
+                            { id: "B-observe-water", label: "觀察注水量", type: "term" }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "S",
+                label: "結構",
+                children: [
+                    {
+                        id: "S-mouth-structure",
+                        label: "瓶口與飲用結構",
+                        children: [
+                            { id: "S-mouth-large", label: "口徑大", type: "term" },
+                            { id: "S-mouth-small", label: "口徑小", type: "term" },
+                            { id: "S-mouth-straw", label: "有吸管", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "S-open-structure",
+                        label: "開蓋結構",
+                        children: [
+                            { id: "S-open-screw", label: "旋蓋式", type: "term" },
+                            { id: "S-open-flip", label: "掀蓋式", type: "term" },
+                            { id: "S-open-pop", label: "彈蓋式", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "S-carry-structure",
+                        label: "攜帶結構",
+                        children: [
+                            { id: "S-carry-handle", label: "提把", type: "term" },
+                            { id: "S-carry-handle-u", label: "U型提把", type: "term" },
+                            { id: "S-carry-handle-triangle", label: "三角形提把", type: "term" },
+                            { id: "S-carry-ring", label: "提環", type: "term" },
+                            { id: "S-carry-ring-top", label: "上方提環", type: "term" },
+                            { id: "S-carry-ring-bottom", label: "下方提環", type: "term" },
+                            { id: "S-carry-strap", label: "提帶", type: "term" },
+                            { id: "S-carry-hook", label: "掛鉤", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "S-visual",
+                        label: "瓶身視覺結構",
+                        children: [
+                            { id: "S-visual-transparent", label: "透明瓶身", type: "term" },
+                            { id: "S-visual-semi", label: "半透明瓶身", type: "term" },
+                            { id: "S-visual-matte", label: "霧面瓶身", type: "term" },
+                            { id: "S-visual-scale", label: "瓶身透明有容量刻度", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "S-form",
+                        label: "形態結構",
+                        children: [
+                            { id: "S-form-cylinder", label: "圓柱狀瓶身", type: "term" },
+                            { id: "S-form-trapezoid-cap", label: "倒梯形瓶蓋", type: "term" },
+                            { id: "S-form-groove", label: "瓶身處凹槽樣式", type: "term" },
+                            { id: "S-form-rubber-mid", label: "瓶身中段橡膠軟料", type: "term" },
+                            { id: "S-form-silicone-base", label: "矽膠止滑底部", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "S-purpose-structure",
+                        label: "用途結構",
+                        children: [
+                            { id: "S-purpose-mixer", label: "有攪拌球", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "S-capacity",
+                        label: "容量",
+                        children: [
+                            { id: "S-capacity-large", label: "大容量", type: "term" }
+                        ]
+                    },
+                    {
+                        id: "S-material",
+                        label: "材質",
+                        children: [
+                            { id: "S-material-metal", label: "金屬材質", type: "term" },
+                            { id: "S-material-plastic", label: "塑膠材質", type: "term" }
+                        ]
+                    }
+                ]
+            }
+        ];
 
         const state = {
             mode: 'natural', // 'natural' or 'fbs'
+            selectedIds: new Set(), // Track IDs for highlighting
             selected: {
-                f: [],
+                f: [], // Array of objects {id, label}
                 b: [],
                 s: []
             }
@@ -729,18 +1009,14 @@
         // --- DOM ELEMENTS ---
         const els = {
             inputCardTitle: document.getElementById('input-card-title'),
-            inputCardInstruction: document.getElementById('input-card-instruction'), // New ID
-            // Instruction elements now managed by container visibility
+            inputCardInstruction: document.getElementById('input-card-instruction'),
 
             modeNatural: document.getElementById('mode-natural'),
             modeFbs: document.getElementById('mode-fbs'),
 
             sidebarToggle: document.getElementById('mode-toggle'),
             drawer: document.getElementById('vocab-drawer'),
-
-            vocabDrawerF: document.getElementById('drawer-vocab-f'),
-            vocabDrawerB: document.getElementById('drawer-vocab-b'),
-            vocabDrawerS: document.getElementById('drawer-vocab-s'),
+            drawerContent: document.querySelector('#vocab-drawer .drawer-content'), // Select the content container directly
 
             // Slots
             slotF: document.getElementById('slot-f'),
@@ -800,25 +1076,128 @@
         }
 
         function initDrawerVocab() {
-            renderVocabList('f', els.vocabDrawerF);
-            renderVocabList('b', els.vocabDrawerB);
-            renderVocabList('s', els.vocabDrawerS);
+            // Clear existing content
+            els.drawerContent.innerHTML = '';
+
+            // Iterate over top-level items (F, B, S)
+            SEMANTIC_DB.forEach(category => {
+                const key = category.id.toLowerCase(); // Extract id for logic (f, b, s)
+
+                // Level 1 Group
+                const l1Group = document.createElement('div');
+                l1Group.className = 'acc-group level-1-group';
+
+                // Level 1 Header
+                const l1Header = document.createElement('div');
+                l1Header.className = 'acc-header level-1-header';
+                l1Header.innerHTML = `
+                    <span class="acc-title">${category.label}</span>
+                    <svg class="acc-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                `;
+                l1Header.onclick = () => toggleAccordion(l1Header, l1Content);
+
+                // Level 1 Content (Container for L2)
+                const l1Content = document.createElement('div');
+                l1Content.className = 'acc-content level-2-container'; // Hidden by default CSS
+
+                // Level 2 Sub-categories
+                if (category.children && category.children.length > 0) {
+                    category.children.forEach(sub => {
+                        // Level 2 Group
+                        const l2Group = document.createElement('div');
+                        l2Group.className = 'acc-group level-2-group';
+
+                        // Level 2 Header
+                        const l2Header = document.createElement('div');
+                        l2Header.className = 'acc-header level-2-header';
+                        l2Header.innerHTML = `
+                            <span class="acc-title">${sub.label}</span>
+                            <svg class="acc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        `;
+
+                        // Level 2 Content Wrapper (acc-content handles open/close)
+                        const l2Content = document.createElement('div');
+                        l2Content.className = 'acc-content';
+
+                        l2Header.onclick = (e) => {
+                            e.stopPropagation(); // Prevent bubbling to L1
+                            toggleAccordion(l2Header, l2Content);
+                        };
+
+                        // Level 3 Container (Handles Flex Layout)
+                        const l3Container = document.createElement('div');
+                        l3Container.className = 'level-3-container';
+
+                        // Level 3 Items (Tags)
+                        if (sub.children && sub.children.length > 0) {
+                            sub.children.forEach(item => {
+                                if (item.type === 'term') {
+                                    // Check selection state
+                                    const isSelected = state.selectedIds.has(item.id);
+                                    const el = createTermChip(key, item, isSelected, false);
+                                    l3Container.appendChild(el);
+                                }
+                            });
+                        }
+
+                        l2Content.appendChild(l3Container);
+
+                        l2Group.appendChild(l2Header);
+                        l2Group.appendChild(l2Content);
+
+                        l1Content.appendChild(l2Group);
+                    });
+                }
+
+                l1Group.appendChild(l1Header);
+                l1Group.appendChild(l1Content);
+
+                els.drawerContent.appendChild(l1Group);
+            });
         }
 
-        function renderVocabList(type, container) {
-            vocabularies[type].forEach(word => {
-                const el = document.createElement('div');
-                el.className = 'vocab-item';
-                el.textContent = word;
+        function toggleAccordion(header, content) {
+            const isOpen = header.classList.contains('is-open');
+
+            if (isOpen) {
+                header.classList.remove('is-open');
+                content.classList.remove('is-open');
+                // Chevron rotation handled by CSS (.acc-header.is-open .acc-chevron)
+            } else {
+                header.classList.add('is-open');
+                content.classList.add('is-open');
+            }
+        }
+
+        /**
+         * Creates a shared Term Chip component.
+         * @param {string} categoryKey - 'f', 'b', 's'
+         * @param {object} item - { id, label, type }
+         * @param {boolean} isSelected - Should be highlighted?
+         * @param {boolean} isRemovable - Should have 'x' button? (For slot display)
+         */
+        function createTermChip(categoryKey, item, isSelected = false, isRemovable = false) {
+            const el = document.createElement('div');
+            el.className = `term-chip ${isSelected ? 'selected' : ''}`;
+            el.textContent = item.label;
+
+            // If in drawer (not removable), assign ID for lookup
+            if (!isRemovable) {
+                el.id = `term-${item.id}`;
                 el.draggable = true;
-                el.dataset.type = type;
-                el.dataset.word = word;
+                el.dataset.type = categoryKey;
+                el.dataset.id = item.id;
 
                 // Drag Start
                 el.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', JSON.stringify({
-                        type,
-                        word
+                        category: categoryKey,
+                        id: item.id,
+                        label: item.label
                     }));
                     e.dataTransfer.effectAllowed = 'copy';
                 });
@@ -826,12 +1205,22 @@
                 // Double click interaction (Optional backup)
                 el.addEventListener('dblclick', () => {
                     if (state.mode === 'fbs') {
-                        addTagToSlot_Logic(type, word);
+                        addTagToSlot_Logic(categoryKey, item);
                     }
                 });
+            } else {
+                // If in slot (removable)
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeTagFromSlot_Logic(categoryKey, item);
+                };
+                el.appendChild(removeBtn);
+            }
 
-                container.appendChild(el);
-            });
+            return el;
         }
 
         function setupDragAndDrop() {
@@ -856,8 +1245,8 @@
                         const data = JSON.parse(e.dataTransfer.getData('text/plain'));
 
                         // Validation: Type Match
-                        if (data.type === slot.dataset.type) {
-                            addTagToSlot_Logic(data.type, data.word);
+                        if (data.category === slot.dataset.type) {
+                            addTagToSlot_Logic(data.category, { id: data.id, label: data.label });
                         } else {
                             // Slot Mismatch Feedback
                             triggerSlotError(slot);
@@ -876,44 +1265,53 @@
             }, 400);
         }
 
-        function addTagToSlot_Logic(type, word) {
-            // Prevent duplicates
-            if (!state.selected[type].includes(word)) {
-                state.selected[type].push(word);
-                updateSlotDisplay(type);
+        function addTagToSlot_Logic(categoryKey, item) {
+            // Prevent duplicates (check ID)
+            if (!state.selectedIds.has(item.id)) {
+                // Add to state
+                state.selected[categoryKey].push(item);
+                state.selectedIds.add(item.id);
+
+                // Update UI
+                updateSlotDisplay(categoryKey);
+                updateDrawerSelection(item.id, true);
             }
         }
 
-        function removeTagFromSlot_Logic(type, word) {
-            state.selected[type] = state.selected[type].filter(w => w !== word);
-            updateSlotDisplay(type);
+        function removeTagFromSlot_Logic(categoryKey, item) {
+            // Remove from state
+            state.selected[categoryKey] = state.selected[categoryKey].filter(i => i.id !== item.id);
+            state.selectedIds.delete(item.id);
+
+            // Update UI
+            updateSlotDisplay(categoryKey);
+            updateDrawerSelection(item.id, false);
         }
 
-        function updateSlotDisplay(type) {
-            const slot = els[`slot${type.toUpperCase()}`];
+        function updateDrawerSelection(termId, isSelected) {
+            const el = document.getElementById(`term-${termId}`);
+            if (el) {
+                if (isSelected) {
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            }
+        }
+
+        function updateSlotDisplay(categoryKey) {
+            const slot = els[`slot${categoryKey.toUpperCase()}`];
             slot.innerHTML = ''; // Clear current content
 
-            const words = state.selected[type];
+            const items = state.selected[categoryKey];
 
-            words.forEach((word, index) => {
-                // Add tag
-                const tag = document.createElement('div');
-                tag.className = 'slot-tag';
-                tag.innerHTML = `
-                    ${word}
-                    <span class="remove-tag-btn">&times;</span>
-                `;
-
-                // Remove logic
-                tag.querySelector('.remove-tag-btn').onclick = (e) => {
-                    e.stopPropagation();
-                    removeTagFromSlot_Logic(type, word);
-                };
-
-                slot.appendChild(tag);
+            items.forEach((item, index) => {
+                // Create removable chip (Always selected/highlighted in slot)
+                const chip = createTermChip(categoryKey, item, true, true); // isSelected=true, isRemovable=true
+                slot.appendChild(chip);
 
                 // Add comma if not the last item
-                if (index < words.length - 1) {
+                if (index < items.length - 1) {
                     const comma = document.createElement('span');
                     comma.className = 'slot-comma';
                     comma.textContent = '、';
@@ -922,33 +1320,122 @@
             });
         }
 
+        // --- API Integration ---
+        let abortController = null;
+
+        async function callGenerateImageAPI(prompt, mode) {
+            // Cancel previous request if exists
+            if (abortController) {
+                abortController.abort();
+            }
+            abortController = new AbortController();
+
+            // UI Loading State
+            const btn = mode === 'natural' ? els.btnGenerateNatural : els.btnGenerateFbs;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner">⏳</span> 生成中...';
+
+            // Show loading in result area too
+            const resultArea = document.getElementById('image-display-area');
+            resultArea.innerHTML = '<p class="placeholder-text">AI 正在繪製您的設計...</p>';
+
+            try {
+                const response = await fetch('/api/generate-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt, mode }),
+                    signal: abortController.signal
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Generative Error');
+                }
+
+                // Render Image
+                if (data.image) {
+                    // Check if base64 or url (assuming base64 from server or URL)
+                    // If server returns full data URI "data:image...", use directly
+                    // If just base64 string, prepend header.
+                    // Let's assume server returns full data URI or we handle it.
+                    // Implementation below assumes data.image is ready to use src.
+                    const img = new Image();
+                    img.src = data.image; // data:image/png;base64,...
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '100%';
+                    img.style.objectFit = 'contain';
+                    img.onload = () => {
+                        resultArea.innerHTML = '';
+                        resultArea.appendChild(img);
+                    };
+                } else if (data.message) {
+                    // If model returned text instead of image (fallback)
+                    resultArea.innerHTML = `<div style="padding:1rem; text-align:center; color:#666;">
+                        <p>圖像生成服務暫時回應文字：</p>
+                        <p style="font-style:italic;">"${data.message}"</p>
+                    </div>`;
+                }
+
+                log(`[${mode.toUpperCase()}] Image generation success.`);
+
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    log('Request aborted.');
+                } else {
+                    console.error('Generation Failed:', error);
+                    alert('生成失敗: ' + error.message);
+                    resultArea.innerHTML = '<p class="placeholder-text" style="color:red;">生成失敗，請重試。</p>';
+                }
+            } finally {
+                // Reset Button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                abortController = null;
+            }
+        }
+
+        // --- EVENT HANDLERS UPDATE ---
+
+        // FBS Generate
         function handleFbsGenerate() {
+            // ... validation logic ...
             // Validate
             // Check if any slot is empty
             const incomplete = [];
-            if (state.selected.f.length === 0) incomplete.push('功能 (Function)');
-            if (state.selected.b.length === 0) incomplete.push('行為 (Behavior)');
-            if (state.selected.s.length === 0) incomplete.push('結構 (Structure)');
+            if (state.selected.f.length === 0) incomplete.push('功能');
+            if (state.selected.b.length === 0) incomplete.push('行為');
+            if (state.selected.s.length === 0) incomplete.push('結構');
 
             if (incomplete.length > 0) {
-                alert(`請完成 ${incomplete.length === 3 ? '功能、行為、結構' : incomplete.map(s => s.split(' ')[0]).join('、')} 詞彙選擇`);
+                alert(`請完成 ${incomplete.join('、')} 詞彙選擇`);
                 return;
             }
 
-            // Construct Final Prompt using serial comma visualization logic from slots
             const parts = {
-                f: state.selected.f.map(w => `[${w}]`).join('、'),
-                b: state.selected.b.map(w => `[${w}]`).join('、'),
-                s: state.selected.s.map(w => `[${w}]`).join('、')
+                f: state.selected.f.map(item => item.label).join('、'), // Use label string
+                b: state.selected.b.map(item => item.label).join('、'),
+                s: state.selected.s.map(item => item.label).join('、')
             };
 
-            const finalPrompt = `請生成一款 ${parts.f} 的運動水壺，
-使用者可透過 ${parts.b} 進行操作，
-其結構包含 ${parts.s} 。`;
+            const finalPrompt = `請生成一款 ${parts.f} 的運動水壺，使用者可透過 ${parts.b} 進行操作，其結構包含 ${parts.s}。`;
 
-            log(`[FBS] Generated Prompt:\n${finalPrompt}`);
-            console.log(finalPrompt);
+            log(`[FBS] Sending Prompt: ${finalPrompt}`);
+            callGenerateImageAPI(finalPrompt, 'fbs');
         }
+
+        // Natural Generate
+        els.btnGenerateNatural.addEventListener('click', () => {
+            const input = els.textInputNatural.value.trim();
+            if (!input) return alert('請輸入設計想法');
+
+            log(`[Natural] Sending Prompt: ${input}`);
+            callGenerateImageAPI(input, 'natural');
+        });
+
 
         function log(msg) {
             const logContent = document.getElementById('log-content');
