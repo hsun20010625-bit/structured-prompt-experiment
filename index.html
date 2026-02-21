@@ -1323,46 +1323,73 @@
         // --- API Integration ---
         let abortController = null;
 
-        async function callGenerateImageAPI(prompt, mode) {
-            // Cancel previous request if exists
+        /**
+         * Safe Network Wrapper (User Recommended)
+         */
+        async function callGenerateImageAPI(payload) {
             if (abortController) {
                 abortController.abort();
             }
-            abortController = new AbortController();
 
+            abortController = new AbortController();
+            const myController = abortController;
+
+            try {
+                const response = await fetch("/api/generate-image", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    signal: myController.signal,
+                });
+
+                const text = await response.text();
+                let data;
+
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    throw new Error(`API did not return JSON. status=${response.status}`);
+                }
+
+                if (!response.ok) {
+                    throw new Error(data?.error || `Request failed: ${response.status}`);
+                }
+
+                return data;
+
+            } catch (err) {
+                if (err?.name === "AbortError") {
+                    return null;
+                }
+                throw err;
+            } finally {
+                if (abortController === myController) {
+                    abortController = null;
+                }
+            }
+        }
+
+        /**
+         * UI Orchestrator: Handles button state, loading, and result display
+         */
+        async function runGenerationFlow(prompt, mode) {
             // UI Loading State
             const btn = mode === 'natural' ? els.btnGenerateNatural : els.btnGenerateFbs;
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="loading-spinner">⏳</span> 生成中...';
 
-            // Show loading in result area too
             const resultArea = document.getElementById('image-display-area');
             resultArea.innerHTML = '<p class="placeholder-text">AI 正在繪製您的設計...</p>';
 
             try {
-                const response = await fetch('/api/generate-image', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ prompt, mode }),
-                    signal: abortController.signal
-                });
+                const data = await callGenerateImageAPI({ prompt, mode });
 
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Generative Error');
-                }
+                // If null, it was aborted, so we do nothing (let the next request handle UI)
+                if (!data) return;
 
                 // Render Image
                 if (data.image) {
-                    // Check if base64 or url (assuming base64 from server or URL)
-                    // If server returns full data URI "data:image...", use directly
-                    // If just base64 string, prepend header.
-                    // Let's assume server returns full data URI or we handle it.
-                    // Implementation below assumes data.image is ready to use src.
                     const img = new Image();
                     img.src = data.image; // data:image/png;base64,...
                     img.style.maxWidth = '100%';
@@ -1373,7 +1400,6 @@
                         resultArea.appendChild(img);
                     };
                 } else if (data.message) {
-                    // If model returned text instead of image (fallback)
                     resultArea.innerHTML = `<div style="padding:1rem; text-align:center; color:#666;">
                         <p>圖像生成服務暫時回應文字：</p>
                         <p style="font-style:italic;">"${data.message}"</p>
@@ -1383,18 +1409,14 @@
                 log(`[${mode.toUpperCase()}] Image generation success.`);
 
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    log('Request aborted.');
-                } else {
-                    console.error('Generation Failed:', error);
-                    alert('生成失敗: ' + error.message);
-                    resultArea.innerHTML = '<p class="placeholder-text" style="color:red;">生成失敗，請重試。</p>';
-                }
+                console.error('Generation Failed:', error);
+                alert('生成失敗: ' + error.message);
+                resultArea.innerHTML = '<p class="placeholder-text" style="color:red;">生成失敗，請重試。</p>';
             } finally {
-                // Reset Button
+                // Reset Button if this was the last active request
+                // (Though in this specific UI, even if multiple are flying, only one btn type is usually active)
                 btn.disabled = false;
                 btn.innerHTML = originalText;
-                abortController = null;
             }
         }
 
@@ -1424,7 +1446,7 @@
             const finalPrompt = `請生成一款 ${parts.f} 的運動水壺，使用者可透過 ${parts.b} 進行操作，其結構包含 ${parts.s}。`;
 
             log(`[FBS] Sending Prompt: ${finalPrompt}`);
-            callGenerateImageAPI(finalPrompt, 'fbs');
+            runGenerationFlow(finalPrompt, 'fbs');
         }
 
         // Natural Generate
@@ -1433,7 +1455,7 @@
             if (!input) return alert('請輸入設計想法');
 
             log(`[Natural] Sending Prompt: ${input}`);
-            callGenerateImageAPI(input, 'natural');
+            runGenerationFlow(input, 'natural');
         });
 
 
