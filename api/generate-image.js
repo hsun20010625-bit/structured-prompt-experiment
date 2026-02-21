@@ -39,6 +39,24 @@ export default async function handler(req, res) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 25000);
 
+        const styledPrompt = `
+A professional studio product photo.
+
+Object: ${prompt}
+
+Background:
+pure solid white background (#FFFFFF), seamless, no texture, no gradient
+
+Lighting:
+flat even lighting, no shadows
+
+Color:
+grayscale only, black and white, fully desaturated, no color
+
+Composition:
+single object, centered, isolated, product catalog style
+`;
+
         const upstream = await fetch(API_URL, {
             method: "POST",
             headers: {
@@ -49,7 +67,7 @@ export default async function handler(req, res) {
             body: JSON.stringify({
                 contents: [
                     {
-                        parts: [{ text: prompt }],
+                        parts: [{ text: styledPrompt }],
                     },
                 ],
                 generationConfig: {
