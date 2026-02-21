@@ -1,0 +1,15 @@
+{
+  "name": "gemini-fbs-platform",
+  "version": "1.0.0",
+  "description": "FBS Platform with Gemini Image Generation",
+  "main": "api/generate-image.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
