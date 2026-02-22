@@ -1,43 +1,3 @@
-import { google } from "googleapis";
-
-async function appendToSheet({ mode, prompt, imageUrl }) {
-    try {
-        const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-        const sheetId = process.env.GOOGLE_SHEET_ID;
-
-        if (!clientEmail || !privateKey || !sheetId) {
-            console.error("Missing Google Sheets environment variables");
-            return;
-        }
-
-        const auth = new google.auth.JWT(
-            clientEmail,
-            null,
-            privateKey.replace(/\\n/g, "\n"),
-            ["https://www.googleapis.com/auth/spreadsheets"]
-        );
-
-        const sheets = google.sheets({ version: "v4", auth });
-
-        const now = new Date();
-        const dateStr = now.toISOString().split('T')[0];
-        const timeStr = now.toTimeString().split(' ')[0];
-
-        await sheets.spreadsheets.values.append({
-            spreadsheetId: sheetId,
-            range: "工作表1!A:E",
-            valueInputOption: "USER_ENTERED",
-            requestBody: {
-                values: [[dateStr, timeStr, mode, prompt, imageUrl]],
-            },
-        });
-        console.log("Successfully backed up to Google Sheets");
-    } catch (err) {
-        console.error("Google Sheets backup failed:", err.message);
-    }
-}
-
 export default async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -142,17 +102,8 @@ single object, centered, isolated, product catalog style
         const inlineData = part?.inlineData;
 
         if (inlineData?.data && inlineData?.mimeType) {
-            const imageUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
-
-            // 成功生成後寫入 Google Sheets (不使用 await，避免阻塞主要回應)
-            appendToSheet({
-                mode: mode || "unknown",
-                prompt: prompt,
-                imageUrl: imageUrl,
-            });
-
             return res.status(200).json({
-                image: imageUrl,
+                image: `data:${inlineData.mimeType};base64,${inlineData.data}`,
                 mode: mode || "unknown",
             });
         }
