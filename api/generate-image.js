@@ -2,10 +2,19 @@ import { google } from "googleapis";
 
 async function appendToSheet({ mode, prompt, imageUrl }) {
     try {
+        const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        const sheetId = process.env.GOOGLE_SHEET_ID;
+
+        if (!clientEmail || !privateKey || !sheetId) {
+            console.error("Missing Google Sheets environment variables");
+            return;
+        }
+
         const auth = new google.auth.JWT(
-            process.env.GOOGLE_CLIENT_EMAIL,
+            clientEmail,
             null,
-            process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+            privateKey.replace(/\\n/g, "\n"),
             ["https://www.googleapis.com/auth/spreadsheets"]
         );
 
@@ -16,15 +25,16 @@ async function appendToSheet({ mode, prompt, imageUrl }) {
         const timeStr = now.toTimeString().split(' ')[0];
 
         await sheets.spreadsheets.values.append({
-            spreadsheetId: process.env.GOOGLE_SHEET_ID,
+            spreadsheetId: sheetId,
             range: "工作表1!A:E",
             valueInputOption: "USER_ENTERED",
             requestBody: {
                 values: [[dateStr, timeStr, mode, prompt, imageUrl]],
             },
         });
+        console.log("Successfully backed up to Google Sheets");
     } catch (err) {
-        console.error("Google Sheets backup failed:", err);
+        console.error("Google Sheets backup failed:", err.message);
     }
 }
 
@@ -134,8 +144,8 @@ single object, centered, isolated, product catalog style
         if (inlineData?.data && inlineData?.mimeType) {
             const imageUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
 
-            // 成功生成後寫入 Google Sheets (使用 await 確保寫入完成)
-            await appendToSheet({
+            // 成功生成後寫入 Google Sheets (不使用 await，避免阻塞主要回應)
+            appendToSheet({
                 mode: mode || "unknown",
                 prompt: prompt,
                 imageUrl: imageUrl,
