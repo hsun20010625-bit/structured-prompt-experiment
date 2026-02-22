@@ -10,12 +10,17 @@ async function appendToSheet({ mode, prompt, imageUrl }) {
         );
 
         const sheets = google.sheets({ version: "v4", auth });
+
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toTimeString().split(' ')[0];
+
         await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SHEET_ID,
-            range: "Sheet1!A:D",
+            range: "工作表1!A:E",
             valueInputOption: "USER_ENTERED",
             requestBody: {
-                values: [[new Date().toISOString(), mode, prompt, imageUrl]],
+                values: [[dateStr, timeStr, mode, prompt, imageUrl]],
             },
         });
     } catch (err) {
