@@ -727,6 +727,42 @@
             display: flex;
             align-items: center;
         } */
+        /* Save Button Style */
+        .save-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            color: #444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .save-btn:hover {
+            background: #fff;
+            border-color: #4a90e2;
+            color: #4a90e2;
+        }
+
+        .save-btn.success {
+            background: #4caf50;
+            color: #fff;
+            border-color: #4caf50;
+        }
+
+        .save-btn svg {
+            width: 16px;
+            height: 16px;
+        }
     </style>
 </head>
 
@@ -756,6 +792,15 @@
             </div>
             <div id="image-display-area" class="result-container">
                 <p class="placeholder-text">請在下方輸入您的設計想法</p>
+                <button id="btn-save-image" class="save-btn hidden" title="儲存圖片">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    <span>儲存圖片</span>
+                </button>
             </div>
         </section>
 
@@ -1003,7 +1048,9 @@
                 f: [], // Array of objects {id, label}
                 b: [],
                 s: []
-            }
+            },
+            lastPrompt: '',
+            lastImage: ''
         };
 
         // --- DOM ELEMENTS ---
@@ -1025,7 +1072,8 @@
 
             btnGenerateFbs: document.getElementById('btn-generate-fbs'),
             btnGenerateNatural: document.getElementById('btn-generate'),
-            textInputNatural: document.querySelector('.text-input')
+            textInputNatural: document.querySelector('.text-input'),
+            btnSaveImage: document.getElementById('btn-save-image')
         };
 
         // --- INITIALIZATION ---
@@ -1039,6 +1087,9 @@
 
         // FBS Generate
         els.btnGenerateFbs.addEventListener('click', handleFbsGenerate);
+
+        // Save Image
+        els.btnSaveImage.addEventListener('click', handleSaveImage);
 
         // Natural Generate
         els.btnGenerateNatural.addEventListener('click', () => {
@@ -1390,6 +1441,9 @@
 
                 // Render Image
                 if (data.image) {
+                    state.lastPrompt = prompt;
+                    state.lastImage = data.image;
+
                     const img = new Image();
                     img.src = data.image; // data:image/png;base64,...
                     img.style.maxWidth = '100%';
@@ -1398,8 +1452,12 @@
                     img.onload = () => {
                         resultArea.innerHTML = '';
                         resultArea.appendChild(img);
+                        // Show save button
+                        els.btnSaveImage.classList.remove('hidden');
+                        resultArea.appendChild(els.btnSaveImage);
                     };
                 } else if (data.message) {
+                    els.btnSaveImage.classList.add('hidden');
                     resultArea.innerHTML = `<div style="padding:1rem; text-align:center; color:#666;">
                         <p>圖像生成服務暫時回應文字：</p>
                         <p style="font-style:italic;">"${data.message}"</p>
@@ -1409,6 +1467,7 @@
                 log(`[${mode.toUpperCase()}] Image generation success.`);
 
             } catch (error) {
+                els.btnSaveImage.classList.add('hidden');
                 console.error('Generation Failed:', error);
                 alert('生成失敗: ' + error.message);
                 resultArea.innerHTML = '<p class="placeholder-text" style="color:red;">生成失敗，請重試。</p>';
@@ -1417,6 +1476,40 @@
                 // (Though in this specific UI, even if multiple are flying, only one btn type is usually active)
                 btn.disabled = false;
                 btn.innerHTML = originalText;
+            }
+        }
+
+        async function handleSaveImage() {
+            if (!state.lastImage) return;
+
+            try {
+                const link = document.createElement('a');
+                link.href = state.lastImage;
+                link.download = `${state.lastPrompt || 'generated-image'}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // UI Feedback
+                const btn = els.btnSaveImage;
+                const originalContent = btn.innerHTML;
+
+                btn.classList.add('success');
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>已儲存 ✓</span>
+                `;
+
+                setTimeout(() => {
+                    btn.classList.remove('success');
+                    btn.innerHTML = originalContent;
+                }, 2000);
+
+            } catch (err) {
+                console.error('Save failed:', err);
+                alert('儲存失敗');
             }
         }
 
