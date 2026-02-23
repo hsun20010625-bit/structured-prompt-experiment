@@ -1,3 +1,31 @@
+import { google } from "googleapis";
+async function appendToSheetSafe({ mode, prompt, imageUrl }) {
+    try {
+        const auth = new google.auth.JWT(
+            process.env.GOOGLE_CLIENT_EMAIL,
+            null,
+            process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+            ["https://www.googleapis.com/auth/spreadsheets"]
+        );
+
+        const sheets = google.sheets({ version: "v4", auth });
+
+        const now = new Date();
+        const date = now.toISOString().split("T")[0];
+        const time = now.toTimeString().split(" ")[0];
+
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: process.env.GOOGLE_SHEET_ID,
+            range: "工作表1!A:E",
+            valueInputOption: "USER_ENTERED",
+            requestBody: {
+                values: [[date, time, mode, prompt, imageUrl]],
+            },
+        });
+    } catch (err) {
+        console.error("Sheets backup failed:", err);
+    }
+}
 export default async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -102,8 +130,18 @@ single object, centered, isolated, product catalog style
         const inlineData = part?.inlineData;
 
         if (inlineData?.data && inlineData?.mimeType) {
+
+            const imageUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
+
+            // 背景寫入（不 await，不影響生圖）
+            appendToSheetSafe({
+                mode: mode || "unknown",
+                prompt,
+                imageUrl,
+            });
+
             return res.status(200).json({
-                image: `data:${inlineData.mimeType};base64,${inlineData.data}`,
+                image: imageUrl,
                 mode: mode || "unknown",
             });
         }
