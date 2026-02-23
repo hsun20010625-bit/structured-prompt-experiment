@@ -134,11 +134,6 @@ single object, centered, isolated, product catalog style
             const imageUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
 
             // 背景寫入（不 await，不影響生圖）
-            appendToSheetSafe({
-                mode: mode || "unknown",
-                prompt,
-                imageUrl,
-            });
 
             return res.status(200).json({
                 image: imageUrl,
