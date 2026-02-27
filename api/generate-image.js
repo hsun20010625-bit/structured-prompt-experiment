@@ -72,6 +72,8 @@ single object, centered, isolated, product catalog style
                 ],
                 generationConfig: {
                     responseModalities: ["IMAGE"],
+                    temperature: 0.2,
+                    topP: 0.8
                 },
             }),
         }).finally(() => clearTimeout(timeout));
