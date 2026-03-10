@@ -23,8 +23,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "Server configuration error (GEMINI_API_KEY missing)" });
 
-    // 使用更穩定的 2.0 Flash 模型路徑
-    const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    // 使用 2.0 Flash 模型研發版 (Experimental)
+    const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent";
 
     const styledPrompt = `
     A professional studio product photo.
