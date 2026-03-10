@@ -34,7 +34,7 @@ export default async function handler(req, res) {
             });
         }
 
-        const MODEL = "imagen-3.0-generate-001";
+        const MODEL = "gemini-2.0-flash-exp-image-generation";
 
         const API_URL =
             `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
