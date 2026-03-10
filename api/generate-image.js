@@ -27,17 +27,22 @@ export default async function handler(req, res) {
         }
 
         const apiKey = process.env.GEMINI_API_KEY;
+
         if (!apiKey) {
             return res.status(500).json({
                 error: "Server configuration error (GEMINI_API_KEY missing)",
             });
         }
 
-        const API_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
+        // 🔹使用較穩定的 Gemini 生圖模型
+        const MODEL = "gemini-2.0-flash-exp-image-generation";
 
+        const API_URL =
+            `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+
+        // 🔹增加 timeout（生圖通常需要較久）
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 45000);
 
         const styledPrompt = `
 A professional studio product photo.
@@ -73,12 +78,15 @@ single object, centered, isolated, product catalog style
                 generationConfig: {
                     responseModalities: ["IMAGE"],
                     temperature: 0.2,
-                    topP: 0.8
+                    topP: 0.8,
                 },
             }),
         }).finally(() => clearTimeout(timeout));
 
         const rawText = await upstream.text();
+
+        // 🔹Debug log（Vercel logs 可看到）
+        console.log("Gemini raw response:", rawText);
 
         if (!upstream.ok) {
             return res.status(upstream.status).json({
@@ -89,6 +97,7 @@ single object, centered, isolated, product catalog style
         }
 
         let data;
+
         try {
             data = JSON.parse(rawText);
         } catch (e) {
