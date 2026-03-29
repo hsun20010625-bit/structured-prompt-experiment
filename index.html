@@ -148,13 +148,26 @@
 
         /* Level 1 Specifics */
         .level-1-group {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.8rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #eee;
         }
+
+        .level-1-group.group-f { border-left: 4px solid #4a90e2; }
+        .level-1-group.group-b { border-left: 4px solid #f5a623; }
+        .level-1-group.group-s { border-left: 4px solid #bd10e0; }
+
+        .level-1-group.group-f .acc-title { color: #2a69c0; font-weight: 700; }
+        .level-1-group.group-b .acc-title { color: #b26b00; font-weight: 700; }
+        .level-1-group.group-s .acc-title { color: #6a1b9a; font-weight: 700; }
 
         .level-1-header {
             font-size: 0.95rem;
             color: #444;
-            padding: 0.75rem 0.5rem;
+            padding: 0.75rem 0.5rem 0.75rem 0.75rem;
             border-bottom: 1px solid #eee;
             /* Divider requsted */
         }
@@ -376,7 +389,9 @@
 
         .text-input {
             flex: 1;
-            height: 56px;
+            min-height: 56px;
+            max-height: 250px;
+            overflow-y: auto;
             padding: 0.75rem;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -469,6 +484,8 @@
             border: 1px solid #ddd;
             /* Match input border */
             border-radius: 4px;
+            max-height: 250px;
+            overflow-y: auto;
         }
 
         .sentence-line {
@@ -488,14 +505,10 @@
             display: inline-flex;
             flex-wrap: wrap;
             align-items: center;
+            align-content: flex-start;
             gap: 0.25rem;
             min-width: 100px;
-            /* Slightly smaller min-width */
-            height: 48px;
-            /* Fixed larger height to avoid jump */
-            /* Removed height: fixed, using min-height large enough or explicit height if strict about no-jump */
-            /* Using min-height: 48px seems reasonable, let's try height: 48px if content fits, or min-height */
-            /* User requested "Fixed height (avoid jump)" -> min-height coupled with generous spacing */
+            min-height: 48px;
 
             border: 2px dashed #ccc;
             border-radius: 20px;
@@ -510,8 +523,8 @@
 
         .slot-zone:empty::before {
             content: attr(data-placeholder);
-            color: #ccc;
             font-size: 0.85rem;
+            font-weight: 500;
             pointer-events: none;
             position: absolute;
             /* Center placeholder */
@@ -521,9 +534,36 @@
             white-space: nowrap;
         }
 
-        .slot-zone.drag-over {
-            background-color: #f5f5f5;
-            border-color: #999;
+        .slot-zone[data-type="f"]:empty::before { color: #4a90e2; opacity: 0.6; }
+        .slot-zone[data-type="b"]:empty::before { color: #f5a623; opacity: 0.7; }
+        .slot-zone[data-type="s"]:empty::before { color: #bd10e0; opacity: 0.5; }
+
+        /* Category-specific Slot Zones */
+        .slot-zone[data-type="f"] {
+            border-color: #cce0ff;
+            background-color: #f8fbff;
+        }
+        .slot-zone[data-type="f"].drag-over {
+            border-color: #4a90e2;
+            background-color: #dceafe;
+        }
+
+        .slot-zone[data-type="b"] {
+            border-color: #ffe6c2;
+            background-color: #fffdf9;
+        }
+        .slot-zone[data-type="b"].drag-over {
+            border-color: #f5a623;
+            background-color: #ffecd1;
+        }
+
+        .slot-zone[data-type="s"] {
+            border-color: #ebd6ff;
+            background-color: #fcfaff;
+        }
+        .slot-zone[data-type="s"].drag-over {
+            border-color: #bd10e0;
+            background-color: #f1e0ff;
         }
 
         /* Slot Error Shake Animation */
@@ -574,38 +614,55 @@
             white-space: nowrap;
         }
 
-        /* Shared Hover & Selected Style */
-        .term-chip:hover,
-        .term-chip.selected {
+        /* Category: Function (Blue) */
+        .term-chip.chip-f {
+            border-color: #cce0ff;
+            background-color: #f2f7ff;
+            color: #2a69c0;
+        }
+        .term-chip.chip-f:hover, .term-chip.chip-f.selected {
             border-color: #4a90e2;
-            color: #4a90e2;
+            background-color: #dceafe;
+            box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
             transform: translateY(-1px);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            background-color: #fff;
-            /* Keep white bg unless specified otherwise */
+        }
+
+        /* Category: Behavior (Yellow) */
+        .term-chip.chip-b {
+            border-color: #ffe6c2;
+            background-color: #fffbf2;
+            color: #b26b00;
+        }
+        .term-chip.chip-b:hover, .term-chip.chip-b.selected {
+            border-color: #f5a623;
+            background-color: #ffecd1;
+            box-shadow: 0 2px 4px rgba(245, 166, 35, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Category: Structure (Purple) */
+        .term-chip.chip-s {
+            border-color: #ebd6ff;
+            background-color: #f9f5ff;
+            color: #6a1b9a;
+        }
+        .term-chip.chip-s:hover, .term-chip.chip-s.selected {
+            border-color: #bd10e0;
+            background-color: #f1e0ff;
+            box-shadow: 0 2px 4px rgba(189, 16, 224, 0.2);
+            transform: translateY(-1px);
         }
 
         .term-chip:active {
             cursor: grabbing;
         }
 
-        /* Additional override if selected needs background */
-        /* .term-chip.selected {
-            background-color: #eef; 
-            font-weight: 500;
-        } */
-        /* User requested identical to hover, so we remove extra selected bg for now or keep it minimal if they want just the "light" effect */
-
-        /* Let's follow the user request: "Same visual as hover" 
-           Current hover: border-color: #4a90e2, color: #4a90e2, translateY, shadow.
-           We'll apply this to .selected too.
-        */
-
 
         /* Remove Button (Right Side Only) */
         .term-chip .remove-btn {
             cursor: pointer;
-            color: #999;
+            color: inherit;
+            opacity: 0.6;
             font-weight: bold;
             font-size: 1rem;
             line-height: 1;
@@ -620,8 +677,8 @@
         }
 
         .term-chip .remove-btn:hover {
-            color: #d00;
-            background-color: rgba(0, 0, 0, 0.05);
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.1);
         }
 
         /* Slot Zone styling overrides */
@@ -1091,6 +1148,12 @@
         // Save Image
         els.btnSaveImage.addEventListener('click', handleSaveImage);
 
+        // Auto-resize Natural Language Input
+        els.textInputNatural.addEventListener('input', function() {
+            this.style.height = '56px'; // Reset to min-height to recalculate
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
         // Natural Generate
         els.btnGenerateNatural.addEventListener('click', () => {
             const input = els.textInputNatural.value;
@@ -1136,7 +1199,7 @@
 
                 // Level 1 Group
                 const l1Group = document.createElement('div');
-                l1Group.className = 'acc-group level-1-group';
+                l1Group.className = `acc-group level-1-group group-${key}`;
 
                 // Level 1 Header
                 const l1Header = document.createElement('div');
@@ -1233,7 +1296,7 @@
          */
         function createTermChip(categoryKey, item, isSelected = false, isRemovable = false) {
             const el = document.createElement('div');
-            el.className = `term-chip ${isSelected ? 'selected' : ''}`;
+            el.className = `term-chip chip-${categoryKey} ${isSelected ? 'selected' : ''}`;
             el.textContent = item.label;
 
             // If in drawer (not removable), assign ID for lookup
